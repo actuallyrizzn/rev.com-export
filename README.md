@@ -136,9 +136,29 @@ exports/
 
 ### Running Tests
 
+Run all unit tests:
 ```bash
 pytest
 ```
+
+Run with coverage report:
+```bash
+pytest --cov=rev_exporter --cov-report=html
+```
+
+View coverage report:
+```bash
+# Open htmlcov/index.html in your browser
+```
+
+Run integration tests (requires API credentials):
+```bash
+export REV_CLIENT_API_KEY="your_key"
+export REV_USER_API_KEY="your_key"
+pytest tests/integration/
+```
+
+See `tests/README.md` for more details.
 
 ### Code Quality
 

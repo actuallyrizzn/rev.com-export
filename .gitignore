@@ -44,3 +44,13 @@ docs/key.md
 exports/
 *.egg-info/
 
+# Test coverage
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+coverage.xml
+*.cover
+.hypothesis/
+

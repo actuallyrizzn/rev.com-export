@@ -56,13 +56,16 @@ class TestConfig:
         assert config.client_api_key == "env_key"
         assert config.user_api_key == "env_user"
 
-    def test_not_configured(self):
+    def test_not_configured(self, tmp_path, monkeypatch):
         """Test unconfigured state."""
+        monkeypatch.chdir(tmp_path)
         with patch.dict(os.environ, {}, clear=True):
-            config = Config()
-            assert config.is_configured() is False
-            assert config.client_api_key is None
-            assert config.user_api_key is None
+            # Mock Path.home() to avoid home directory issues in test environment
+            with patch("rev_exporter.config.Path.home", return_value=tmp_path):
+                config = Config()
+                assert config.is_configured() is False
+                assert config.client_api_key is None
+                assert config.user_api_key is None
 
     def test_get_auth_header(self, mock_config):
         """Test getting authorization header."""
@@ -96,6 +99,29 @@ class TestConfig:
         config_file.write_text("invalid json{")
 
         with patch.dict(os.environ, {}, clear=True):
+            config = Config(config_file=config_file)
+            assert config.is_configured() is False
+
+    def test_config_file_missing_keys(self, tmp_path):
+        """Test config file with missing keys."""
+        config_file = tmp_path / "config.json"
+        config_file.write_text('{"client_api_key": "only_client"}')
+
+        with patch.dict(os.environ, {}, clear=True):
+            config = Config(config_file=config_file)
+            assert config.is_configured() is False
+
+    def test_config_file_io_error(self, tmp_path, monkeypatch):
+        """Test handling IO errors when reading config file."""
+        config_file = tmp_path / "config.json"
+        config_file.write_text('{"client_api_key": "test", "user_api_key": "test"}')
+
+        # Mock open to raise IOError
+        def mock_open(*args, **kwargs):
+            raise IOError("Permission denied")
+
+        with patch.dict(os.environ, {}, clear=True), \
+             patch("builtins.open", side_effect=mock_open):
             config = Config(config_file=config_file)
             assert config.is_configured() is False
 

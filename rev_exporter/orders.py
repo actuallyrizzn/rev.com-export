@@ -3,7 +3,7 @@ Order enumeration and retrieval functionality.
 """
 
 import logging
-from typing import List, Optional
+from typing import Dict, List, Optional, Any
 from datetime import datetime
 
 from rev_exporter.client import RevAPIClient, RevAPIError
@@ -26,7 +26,7 @@ class OrderManager:
 
     def list_orders(
         self, page: int = 0, results_per_page: int = 50
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         List orders for a specific page.
 
@@ -84,7 +84,19 @@ class OrderManager:
 
                     # Apply date filter if specified
                     if since and order.placed_on:
-                        if order.placed_on < since:
+                        # Normalize timezones for comparison
+                        since_tz = since
+                        order_tz = order.placed_on
+                        if since_tz.tzinfo is None and order_tz.tzinfo is not None:
+                            # Make since timezone-aware if order is
+                            from datetime import timezone
+                            since_tz = since.replace(tzinfo=timezone.utc)
+                        elif since_tz.tzinfo is not None and order_tz.tzinfo is None:
+                            # Make order timezone-aware if since is
+                            from datetime import timezone
+                            order_tz = order.placed_on.replace(tzinfo=timezone.utc)
+                        
+                        if order_tz < since_tz:
                             # Orders are typically returned newest first,
                             # so if we hit an order older than 'since', we can stop
                             logger.info(
