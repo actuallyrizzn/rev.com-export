@@ -44,22 +44,22 @@ def test_connection(ctx: click.Context) -> None:
     try:
         config = Config()
         if not config.is_configured():
-            click.echo("❌ Error: API credentials not configured", err=True)
+            click.echo("[ERROR] API credentials not configured", err=True)
             click.echo(
-                "Set REV_CLIENT_API_KEY and REV_USER_API_KEY environment variables",
+                "Set REV_API_KEY (or REV_CLIENT_API_KEY and REV_USER_API_KEY) environment variables",
                 err=True,
             )
             sys.exit(1)
 
         client = RevAPIClient(config=config)
         if client.test_connection():
-            click.echo("✅ Connection test successful!")
+            click.echo("[OK] Connection test successful!")
             sys.exit(0)
         else:
-            click.echo("❌ Connection test failed", err=True)
+            click.echo("[ERROR] Connection test failed", err=True)
             sys.exit(1)
     except Exception as e:
-        click.echo(f"❌ Error: {e}", err=True)
+        click.echo(f"[ERROR] {e}", err=True)
         sys.exit(1)
 
 
@@ -106,7 +106,7 @@ def sync(
         # Initialize components
         config = Config()
         if not config.is_configured():
-            click.echo("❌ Error: API credentials not configured", err=True)
+            click.echo("[ERROR] API credentials not configured", err=True)
             sys.exit(1)
 
         client = RevAPIClient(config=config)
@@ -115,10 +115,10 @@ def sync(
         storage = StorageManager(Path(output_dir))
 
         if dry_run:
-            click.echo("🔍 DRY RUN MODE - No files will be downloaded\n")
+            click.echo("[DRY RUN] No files will be downloaded\n")
 
         # Get all orders
-        click.echo("📋 Fetching orders...")
+        click.echo("Fetching orders...")
         all_orders = order_manager.get_all_orders(since=since)
         click.echo(f"   Found {len(all_orders)} total orders")
 
@@ -127,7 +127,7 @@ def sync(
         click.echo(f"   {len(completed_orders)} completed orders\n")
 
         if not completed_orders:
-            click.echo("✅ No completed orders to export")
+            click.echo("[OK] No completed orders to export")
             return
 
         # Process orders
@@ -136,7 +136,7 @@ def sync(
         failures = []
 
         for i, order in enumerate(completed_orders, 1):
-            click.echo(f"📦 Processing order {order.order_number} ({i}/{len(completed_orders)})")
+            click.echo(f"Processing order {order.order_number} ({i}/{len(completed_orders)})")
 
             try:
                 # Get full order details with attachments
@@ -152,7 +152,7 @@ def sync(
                     try:
                         # Check if already downloaded
                         if storage.is_downloaded(attachment.id):
-                            click.echo(f"   ⏭️  Skipping {attachment.name} (already downloaded)")
+                            click.echo(f"   [SKIP] Skipping {attachment.name} (already downloaded)")
                             continue
 
                         # Classify attachment
@@ -172,7 +172,7 @@ def sync(
 
                         if dry_run:
                             click.echo(
-                                f"   📄 Would download: {attachment.name} "
+                                f"   [WOULD DOWNLOAD] {attachment.name} "
                                 f"({att_type.value}, format: {preferred_format or 'default'})"
                             )
                             attachments_downloaded += 1
@@ -204,13 +204,13 @@ def sync(
                             # Mark as downloaded
                             storage.mark_downloaded(attachment.id)
                             attachments_downloaded += 1
-                            click.echo(f"   ✅ Downloaded: {attachment.name}")
+                            click.echo(f"   [OK] Downloaded: {attachment.name}")
 
                     except Exception as e:
                         error_msg = f"Failed to download {attachment.name}: {e}"
                         logger.error(error_msg)
                         failures.append(error_msg)
-                        click.echo(f"   ❌ {error_msg}")
+                        click.echo(f"   [ERROR] {error_msg}")
 
             except Exception as e:
                 error_msg = f"Failed to process order {order.order_number}: {e}"
@@ -221,7 +221,7 @@ def sync(
         # Print summary
         elapsed = datetime.now() - start_time
         click.echo("\n" + "=" * 60)
-        click.echo("📊 SYNC SUMMARY")
+        click.echo("SYNC SUMMARY")
         click.echo("=" * 60)
         click.echo(f"Orders scanned:        {orders_scanned}")
         click.echo(f"Attachments downloaded: {attachments_downloaded}")
@@ -230,20 +230,20 @@ def sync(
         click.echo("=" * 60)
 
         if failures:
-            click.echo("\n⚠️  Failures:")
+            click.echo("\n[WARNING] Failures:")
             for failure in failures[:10]:  # Show first 10 failures
                 click.echo(f"   - {failure}")
             if len(failures) > 10:
                 click.echo(f"   ... and {len(failures) - 10} more")
 
         if dry_run:
-            click.echo("\n💡 This was a dry run. Use without --dry-run to actually download files.")
+            click.echo("\n[INFO] This was a dry run. Use without --dry-run to actually download files.")
 
     except KeyboardInterrupt:
-        click.echo("\n\n⚠️  Interrupted by user")
+        click.echo("\n\n[WARNING] Interrupted by user")
         sys.exit(1)
     except Exception as e:
-        click.echo(f"\n❌ Fatal error: {e}", err=True)
+        click.echo(f"\n[ERROR] Fatal error: {e}", err=True)
         logger.exception("Fatal error in sync command")
         sys.exit(1)
 

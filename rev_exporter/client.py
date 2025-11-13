@@ -25,7 +25,7 @@ class RevAPIError(Exception):
 class RevAPIClient:
     """Client for interacting with the Rev.com API."""
 
-    BASE_URL = "https://www.rev.com/api/v1"
+    BASE_URL = "https://api.rev.com/api/v1"
 
     def __init__(
         self,
