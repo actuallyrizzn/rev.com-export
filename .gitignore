@@ -7,6 +7,7 @@ __pycache__/
 env/
 venv/
 ENV/
+python/
 build/
 develop-eggs/
 dist/
@@ -38,4 +39,8 @@ Thumbs.db
 *.log
 .env
 .env.local
+tmp/
+docs/key.md
+exports/
+*.egg-info/
 
