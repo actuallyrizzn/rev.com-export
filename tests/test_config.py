@@ -125,3 +125,16 @@ class TestConfig:
             config = Config(config_file=config_file)
             assert config.is_configured() is False
 
+    def test_find_config_file_home_dir(self, tmp_path, monkeypatch):
+        """Test finding config file in home directory."""
+        monkeypatch.chdir(tmp_path)
+        home_dir = tmp_path / ".rev-exporter"
+        home_dir.mkdir()
+        config_file = home_dir / "config.json"
+        config_file.write_text('{"client_api_key": "test", "user_api_key": "test"}')
+
+        with patch.dict(os.environ, {}, clear=True), \
+             patch("rev_exporter.config.Path.home", return_value=tmp_path):
+            config = Config()
+            assert config.config_file == config_file
+

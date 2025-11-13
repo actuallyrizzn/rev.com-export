@@ -216,3 +216,14 @@ class TestStorageManager:
         finally:
             index_file.chmod(stat.S_IREAD | stat.S_IWRITE)
 
+    def test_save_index_io_error(self, temp_output_dir, monkeypatch):
+        """Test handling IO errors when saving index."""
+        storage = StorageManager(temp_output_dir)
+
+        # Mock open to raise IOError
+        with patch("builtins.open", side_effect=IOError("Permission denied")):
+            # Should not raise exception, just log error
+            storage.mark_downloaded("att_001")
+            # Index should still be updated in memory
+            assert "att_001" in storage.downloaded_attachments
+

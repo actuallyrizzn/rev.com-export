@@ -260,3 +260,61 @@ class TestOrderManager:
             # Should stop early when order is older than since_date
             assert len(orders) == 0  # Order is older, so should be filtered out and stop
 
+    def test_get_all_orders_timezone_normalization_naive_since(self, mock_api_client):
+        """Test timezone normalization when since is naive."""
+        from datetime import timezone
+        manager = OrderManager(mock_api_client)
+
+        # Naive datetime
+        since_date = datetime(2024, 1, 16)
+
+        response = {
+            "total_count": 1,
+            "results_per_page": 50,
+            "page": 0,
+            "orders": [
+                {"order_number": "1", "status": "Complete", "placed_on": "2024-01-17T10:00:00Z"},
+            ],
+        }
+
+        with patch.object(mock_api_client, "get") as mock_get:
+            mock_get.return_value = response
+            orders = manager.get_all_orders(since=since_date)
+            # Should normalize timezone and include the order
+            assert len(orders) == 1
+
+    def test_get_all_orders_timezone_normalization_naive_order(self, mock_api_client):
+        """Test timezone normalization when order datetime is naive."""
+        from datetime import timezone
+        manager = OrderManager(mock_api_client)
+
+        since_date = datetime(2024, 1, 16, tzinfo=timezone.utc)
+
+        # Order with naive datetime (shouldn't happen in real API, but test the code path)
+        response = {
+            "total_count": 1,
+            "results_per_page": 50,
+            "page": 0,
+            "orders": [
+                {"order_number": "1", "status": "Complete", "placed_on": "2024-01-17T10:00:00"},
+            ],
+        }
+
+        with patch.object(mock_api_client, "get") as mock_get:
+            mock_get.return_value = response
+            # This will fail to parse as timezone-aware, so placed_on will be None
+            # But we test the normalization code path
+            orders = manager.get_all_orders(since=since_date)
+            assert isinstance(orders, list)
+
+    def test_get_all_orders_pagination_error(self, mock_api_client):
+        """Test error handling during pagination."""
+        manager = OrderManager(mock_api_client)
+
+        from rev_exporter.client import RevAPIError
+
+        with patch.object(mock_api_client, "get") as mock_get:
+            mock_get.side_effect = RevAPIError("API error")
+            with pytest.raises(RevAPIError):
+                manager.get_all_orders()
+

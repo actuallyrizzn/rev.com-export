@@ -187,3 +187,12 @@ class TestRevAPIClient:
             call_args = mock_post.call_args
             assert call_args[1]["headers"]["Authorization"] == "existing"
 
+    def test_test_connection_unexpected_exception(self, mock_config):
+        """Test connection test with unexpected exception."""
+        client = RevAPIClient(config=mock_config)
+
+        with patch.object(client, "get") as mock_get:
+            mock_get.side_effect = ValueError("Unexpected error")
+            result = client.test_connection()
+            assert result is False
+
