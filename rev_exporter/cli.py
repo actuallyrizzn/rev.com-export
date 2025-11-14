@@ -204,19 +204,25 @@ def sync(
                             # Mark as downloaded
                             storage.mark_downloaded(attachment.id)
                             attachments_downloaded += 1
-                            click.echo(f"   [OK] Downloaded: {attachment.name}")
+                            # Sanitize filename for console output (handle Unicode)
+                            safe_name = attachment.name.encode('ascii', 'replace').decode('ascii')
+                            click.echo(f"   [OK] Downloaded: {safe_name}")
 
                     except Exception as e:
                         error_msg = f"Failed to download {attachment.name}: {e}"
                         logger.error(error_msg)
                         failures.append(error_msg)
-                        click.echo(f"   [ERROR] {error_msg}")
+                        # Sanitize error message for console output (handle Unicode)
+                        safe_error = str(error_msg).encode('ascii', 'replace').decode('ascii')
+                        click.echo(f"   [ERROR] {safe_error}")
 
             except Exception as e:
                 error_msg = f"Failed to process order {order.order_number}: {e}"
                 logger.error(error_msg)
                 failures.append(error_msg)
-                click.echo(f"   ❌ {error_msg}")
+                # Sanitize error message for console output (handle Unicode)
+                safe_error = str(error_msg).encode('ascii', 'replace').decode('ascii')
+                click.echo(f"   [ERROR] {safe_error}")
 
         # Print summary
         elapsed = datetime.now() - start_time
