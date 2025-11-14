@@ -15,6 +15,7 @@ from rev_exporter.orders import OrderManager
 from rev_exporter.attachments import AttachmentManager, AttachmentType
 from rev_exporter.storage import StorageManager
 from rev_exporter.models import Order, Attachment
+from rev_exporter.browser import generate_browser
 
 logger = None
 
@@ -255,6 +256,36 @@ def sync(
     except Exception as e:
         click.echo(f"\n[ERROR] Fatal error: {e}", err=True)
         logger.exception("Fatal error in sync command")
+        sys.exit(1)
+
+
+@main.command()
+@click.option(
+    "--export-dir",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default="./exports",
+    help="Export directory to browse (default: ./exports)",
+)
+@click.option(
+    "--no-open",
+    is_flag=True,
+    help="Don't open browser automatically after generation",
+)
+@click.pass_context
+def browse(ctx: click.Context, export_dir: Path, no_open: bool) -> None:
+    """Generate and open HTML browser for exported orders."""
+    setup_logging(ctx.obj.get("debug", False))
+
+    try:
+        click.echo(f"Generating browser for: {export_dir}")
+        generate_browser(export_dir, open_browser=not no_open)
+        click.echo(f"\n[OK] Browser generated successfully!")
+        click.echo(f"Open {export_dir / 'index.html'} in your browser to view.")
+    except Exception as e:
+        click.echo(f"\n[ERROR] Failed to generate browser: {e}", err=True)
+        if ctx.obj.get("debug", False):
+            import traceback
+            traceback.print_exc()
         sys.exit(1)
 
 
