@@ -18,7 +18,7 @@ class TestRevAPIClient:
         """Test client initialization."""
         client = RevAPIClient(config=mock_config)
         assert client.config == mock_config
-        assert client.BASE_URL == "https://www.rev.com/api/v1"
+        assert client.BASE_URL == "https://api.rev.com/api/v1"
         assert "Authorization" in client.session.headers
 
     def test_init_unconfigured(self, mock_config_unconfigured):

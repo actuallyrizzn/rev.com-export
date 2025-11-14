@@ -23,9 +23,12 @@ def mock_config():
 
 
 @pytest.fixture
-def mock_config_unconfigured():
+def mock_config_unconfigured(monkeypatch, tmp_path):
     """Create a mock config without API keys."""
+    # Mock Path.cwd to prevent loading from docs/key.md
+    monkeypatch.setattr("pathlib.Path.cwd", lambda: tmp_path)
     config = Config()
+    config.api_key = None
     config.client_api_key = None
     config.user_api_key = None
     return config

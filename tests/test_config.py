@@ -106,7 +106,7 @@ class TestConfig:
         mock_config.client_api_key = None
         mock_config.user_api_key = None
         header = mock_config.get_auth_header()
-        assert header == "Bearer test_api_key"
+        assert header == "Rev test_api_key:test_api_key"
         
         # Test with two-key format
         mock_config.api_key = None
@@ -196,4 +196,30 @@ class TestConfig:
              patch("rev_exporter.config.Path.home", return_value=tmp_path):
             config = Config()
             assert config.config_file == config_file
+
+    def test_load_from_key_file_io_error(self, tmp_path, monkeypatch):
+        """Test loading from key file with IOError."""
+        monkeypatch.setattr("pathlib.Path.cwd", lambda: tmp_path)
+        key_file = tmp_path / "docs" / "key.md"
+        key_file.parent.mkdir(parents=True)
+        key_file.write_text("test_key")
+        
+        with patch.dict(os.environ, {}, clear=True), \
+             patch("rev_exporter.config.Path.home", return_value=tmp_path), \
+             patch.object(Path, "read_text", side_effect=IOError("Permission denied")):
+            config = Config()
+            assert config.is_configured() is False
+
+    def test_load_from_key_file_unicode_error(self, tmp_path, monkeypatch):
+        """Test loading from key file with UnicodeDecodeError."""
+        monkeypatch.setattr("pathlib.Path.cwd", lambda: tmp_path)
+        key_file = tmp_path / "docs" / "key.md"
+        key_file.parent.mkdir(parents=True)
+        key_file.write_text("test_key")
+        
+        with patch.dict(os.environ, {}, clear=True), \
+             patch("rev_exporter.config.Path.home", return_value=tmp_path), \
+             patch.object(Path, "read_text", side_effect=UnicodeDecodeError("utf-8", b"", 0, 1, "invalid")):
+            config = Config()
+            assert config.is_configured() is False
 

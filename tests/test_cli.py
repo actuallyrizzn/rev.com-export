@@ -54,11 +54,14 @@ class TestCLI:
             assert result.exit_code == 1
             assert "failed" in result.output.lower()
 
-    def test_test_connection_unconfigured(self, monkeypatch):
+    def test_test_connection_unconfigured(self, monkeypatch, tmp_path):
         """Test test-connection when not configured."""
         # Clear environment
         monkeypatch.delenv("REV_CLIENT_API_KEY", raising=False)
         monkeypatch.delenv("REV_USER_API_KEY", raising=False)
+        monkeypatch.delenv("REV_API_KEY", raising=False)
+        # Mock Path.cwd to prevent loading from docs/key.md
+        monkeypatch.setattr("pathlib.Path.cwd", lambda: tmp_path)
 
         runner = CliRunner()
         result = runner.invoke(main, ["test-connection"])
@@ -230,12 +233,15 @@ class TestCLI:
 
             result = runner.invoke(main, ["test-connection"])
             assert result.exit_code == 1
-            assert "Error" in result.output
+            assert "[ERROR]" in result.output
 
     def test_sync_not_configured(self, monkeypatch, tmp_path):
         """Test sync when not configured."""
         monkeypatch.delenv("REV_CLIENT_API_KEY", raising=False)
         monkeypatch.delenv("REV_USER_API_KEY", raising=False)
+        monkeypatch.delenv("REV_API_KEY", raising=False)
+        # Mock Path.cwd to prevent loading from docs/key.md
+        monkeypatch.setattr("pathlib.Path.cwd", lambda: tmp_path)
 
         runner = CliRunner()
         result = runner.invoke(main, ["sync", "--output-dir", str(tmp_path / "exports")])
