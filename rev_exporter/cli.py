@@ -152,7 +152,9 @@ def sync(
                     try:
                         # Check if already downloaded
                         if storage.is_downloaded(attachment.id):
-                            click.echo(f"   [SKIP] Skipping {attachment.name} (already downloaded)")
+                            # Sanitize filename for console output (handle Unicode)
+                            safe_name = attachment.name.encode('ascii', 'replace').decode('ascii')
+                            click.echo(f"   [SKIP] Skipping {safe_name} (already downloaded)")
                             continue
 
                         # Classify attachment
@@ -238,7 +240,9 @@ def sync(
         if failures:
             click.echo("\n[WARNING] Failures:")
             for failure in failures[:10]:  # Show first 10 failures
-                click.echo(f"   - {failure}")
+                # Sanitize failure message for console output (handle Unicode)
+                safe_failure = str(failure).encode('ascii', 'replace').decode('ascii')
+                click.echo(f"   - {safe_failure}")
             if len(failures) > 10:
                 click.echo(f"   ... and {len(failures) - 10} more")
 
