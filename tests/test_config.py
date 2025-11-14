@@ -223,3 +223,19 @@ class TestConfig:
             config = Config()
             assert config.is_configured() is False
 
+    def test_load_from_key_file_success(self, tmp_path, monkeypatch):
+        """Test successfully loading from key file."""
+        monkeypatch.setattr("pathlib.Path.cwd", lambda: tmp_path)
+        key_file = tmp_path / "docs" / "key.md"
+        key_file.parent.mkdir(parents=True)
+        key_file.write_text("client_key:user_key")
+        
+        with patch.dict(os.environ, {}, clear=True), \
+             patch("rev_exporter.config.Path.home", return_value=tmp_path):
+            config = Config()
+            assert config.is_configured() is True
+            assert config.api_key == "client_key:user_key"
+            # Test that get_auth_header works with colon-separated key
+            header = config.get_auth_header()
+            assert header == "Rev client_key:user_key"
+
